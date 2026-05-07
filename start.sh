@@ -20,7 +20,7 @@ touch $APT_DIR/var/lib/dpkg/status
 # Create local sources.list
 echo "deb http://archive.ubuntu.com/ubuntu/ noble main universe" > $APT_DIR/etc/apt/sources.list
 
-# Create a robust local apt.conf that overrides ALL paths and security
+# Create a robust local apt.conf
 cat > $APT_DIR/etc/apt/apt.conf <<EOF
 Dir "$APT_DIR";
 Dir::State "$APT_DIR/var/lib/apt";
@@ -33,7 +33,6 @@ APT::Get::AllowUnauthenticated "true";
 EOF
 
 # 2. Patch missing Noble libraries
-# We check for libatspi.so.0 as the sentinel
 if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
     echo "--- Patching missing system libraries (Ubuntu 24.04 Noble) ---"
     
@@ -41,14 +40,19 @@ if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
     apt-get -c $APT_DIR/etc/apt/apt.conf update --allow-insecure-repositories
     
     cd $HOME/lib
-    # Try multiple variations of the accessibility and security library names
+    # Download packages via APT
     apt-get -c $APT_DIR/etc/apt/apt.conf download --allow-unauthenticated \
         libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2t64 libdrm2 libxkbcommon0 \
         libxcomposite1 libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 \
         libasound2t64 libxfixes3 libxext6 libxrender1 libx11-6 libx11-xcb1 libxcb1 \
-        libdbus-1-3 libnspr4 libnss3 libfontconfig1 libfreetype6 libglib2.0-0t64 \
-        libatspi0t64 || apt-get -c $APT_DIR/etc/apt/apt.conf download --allow-unauthenticated libatspi0
+        libdbus-1-3 libnspr4 libnss3 libfontconfig1 libfreetype6 libglib2.0-0t64
     
+    # Direct download fallback for libatspi (which seems to be missing from some mirror views)
+    if [ ! -f "libatspi.so.0" ]; then
+        echo "Directly downloading libatspi..."
+        wget -q http://mirrors.kernel.org/ubuntu/pool/main/a/at-spi2-core/libatspi0t64_2.52.0-1build1_amd64.deb
+    fi
+
     echo "Extracting .deb packages..."
     for deb in *.deb; do 
         [ -f "$deb" ] || continue
