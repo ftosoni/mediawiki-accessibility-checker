@@ -44,27 +44,24 @@ if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
     apt-get -c $APT_DIR/etc/apt/apt.conf update --allow-insecure-repositories
     
     cd $HOME/lib
-    # Download packages via APT
+    # MASSIVE BATCH: Try to catch all moles at once
     apt-get -c $APT_DIR/etc/apt/apt.conf download --allow-unauthenticated \
         libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2t64 libdrm2 libxkbcommon0 \
         libxcomposite1 libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 \
         libasound2t64 libxfixes3 libxext6 libxrender1 libx11-6 libx11-xcb1 libxcb1 \
         libdbus-1-3 libnspr4 libnss3 libfontconfig1 libfreetype6 libglib2.0-0t64 \
-        libxshmfence1 libxxf86vm1 libatspi0t64
+        libxshmfence1 libxxf86vm1 libsecret-1-0 libwayland-client0 libwayland-server0 \
+        libgles2 libegl1 libvulkan1 libpci3
     
-    # Direct download fallback for libatspi if APT still fails
-    if [ ! -f "libatspi0t64"*".deb" ]; then
-        echo "Attempting direct download of libatspi..."
-        # Try both main and updates paths
-        wget -q -O libatspi.deb http://archive.ubuntu.com/ubuntu/pool/main/a/at-spi2-core/libatspi0t64_2.52.0-1build1_amd64.deb || \
-        wget -q -O libatspi.deb http://mirrors.kernel.org/ubuntu/pool/main/a/at-spi2-core/libatspi0t64_2.52.0-1build1_amd64.deb
-    fi
+    # Direct download fallback for libatspi (fixed URL)
+    echo "Attempting direct download of libatspi..."
+    wget -q -O libatspi.deb http://mirrors.kernel.org/ubuntu/pool/main/a/at-spi2-core/libatspi0t64_2.52.0-1_amd64.deb || \
+    wget -q -O libatspi.deb http://archive.ubuntu.com/ubuntu/pool/main/a/at-spi2-core/libatspi0t64_2.52.0-1_amd64.deb
 
     echo "Extracting .deb packages..."
     for deb in *.deb; do 
         [ -f "$deb" ] || continue
-        # Check if file is valid (at least 1KB)
-        if [ $(stat -c%s "$deb") -lt 1000 ]; then
+        if [ $(stat -c%s "$deb") -lt 2000 ]; then
             echo "Skipping invalid/corrupt package: $deb"
             rm -f "$deb"
             continue
@@ -77,7 +74,14 @@ fi
 
 # 3. Set Library Paths
 export LD_LIBRARY_PATH=$HOME/lib/usr/lib/x86_64-linux-gnu:$HOME/lib/lib/x86_64-linux-gnu:$HOME/lib/usr/lib:$LD_LIBRARY_PATH
-echo "LD_LIBRARY_PATH is active."
+
+# MOLE HUNTER: Diagnostics
+echo "--- Mole Hunter Diagnostics ---"
+BROWSER_BIN=$(find $PLAYWRIGHT_BROWSERS_PATH -name "chrome-headless-shell" | head -n 1)
+if [ -n "$BROWSER_BIN" ]; then
+    echo "Checking dependencies for: $BROWSER_BIN"
+    ldd "$BROWSER_BIN" | grep "not found"
+fi
 
 # 4. Check/Install Playwright browsers
 if [ ! -d "$PLAYWRIGHT_BROWSERS_PATH" ]; then
