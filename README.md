@@ -1,64 +1,21 @@
-# MediaWiki Accessibility Checker (axe-core)
+# MediaWiki Accessibility Checker
 
-A modern, high-performance accessibility auditing tool for the MediaWiki ecosystem. Powered by **FastAPI**, **Playwright**, and **axe-core**.
+[![SWH](https://archive.softwareheritage.org/badge/origin/https://github.com/ftosoni/mediawiki-accessibility-checker/)](https://archive.softwareheritage.org/browse/origin/?origin_url=https://github.com/ftosoni/mediawiki-accessibility-checker)
+[![Python](https://img.shields.io/badge/python-3.11-blue.svg?style=flat-square)](https://www.python.org/)
+[![CI](https://github.com/ftosoni/mediawiki-accessibility-checker/actions/workflows/python-ci.yml/badge.svg?branch=main&style=flat-square)](https://github.com/ftosoni/mediawiki-accessibility-checker/actions/workflows/python-ci.yml)
+[![Code Style: Wikimedia](https://img.shields.io/badge/code%20style-wikimedia-blueviolet.svg?style=flat-square)](https://www.mediawiki.org/wiki/Manual:Coding_conventions/JavaScript)
+[![License](https://img.shields.io/github/license/ftosoni/mediawiki-accessibility-checker?style=flat-square)](./LICENSE)
 
-## Features
-- **URL Audit**: Check any live MediaWiki page or external URL.
-- **HTML Snippet Audit**: Paste raw HTML for quick validation.
-- **Deep Scanning**: Supports Shadow DOM and dynamic content.
-- **Codex Design**: Beautiful, responsive interface based on the Wikimedia Design System.
-- **Standards**: WCAG 2.1 & 2.2 (A, AA, AAA).
+A modern, high-performance accessibility auditing tool designed for the MediaWiki ecosystem. 
+Built on **axe-core** and **Playwright**, it provides deep WCAG 2.2 AA validation with professional reporting capabilities.
+The UI is built using the **Wikimedia Codex Design System** for a seamless experience within the Wikimedia environment.
 
-## Tech Stack
-- **Backend**: Python 3.9+, FastAPI, Playwright (Chromium).
-- **Frontend**: Vanilla JS, CSS (Codex), HTML5.
-- **Engine**: axe-core.
+As seen on [accessibility-checker.toolforge.org](https://accessibility-checker.toolforge.org/).
 
-## Local Setup
+## ✨ Key Features
 
-1. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Install Playwright Browsers**:
-   ```bash
-   playwright install chromium
-   ```
-
-3. **Run the application**:
-   ```bash
-   uvicorn backend.main:app --reload
-   ```
-
-4. **Access the tool**:
-   Open [http://localhost:8000](http://localhost:8000) in your browser.
-
-## Deployment on Toolforge
-
-This tool is designed to run on Wikimedia Toolforge.
-
-1. **Create a new tool**:
-   ```bash
-   become <toolname>
-   ```
-
-2. **Configure Kubernetes**:
-   Ensure your `webservice` is configured to use the Python environment.
-
-3. **Install dependencies in your Toolforge environment**:
-   ```bash
-   pip install -r requirements.txt
-   playwright install chromium
-   ```
-
-4. **Start the webservice**:
-   ```bash
-   webservice python3.11 start
-   ```
-
-## License
-MPL-2.0
+- **🌐 Deep MediaWiki Integration**: Optimized for auditing Wikipedia, Commons, and other MediaWiki-based projects.
+- **🛡️ WCAG 2.2 AA Compliance**: Defaulted to the latest accessibility standards for comprehensive auditing.
 - **📄 Multi-Format Exports**: Generate professional reports in **PDF**, **JSON**, **CSV**, and **Wikitext** (ready for Wiki pages).
 - **🎨 Codex UI**: A beautiful, responsive interface that follows Wikimedia's modern design standards.
 - **🔍 Intelligent DOM Enrichment**: Automatically retrieves full HTML snippets and image previews, even for truncated axe-core results.
@@ -104,25 +61,29 @@ The server will be available at `http://localhost:8000`.
 
 ## 🚀 Deployment (Toolforge)
 
-Follow these steps to deploy on Wikimedia Toolforge.
+We use the Toolforge buildservice for deployment to ensure dependencies and Procfile instructions are correctly processed.
 
-### 1. Build Service
-Toolforge uses the buildservice to containerize the application. Ensure your `Procfile` is present in the root.
-
+### 1. Clean Existing Build
+Stop any running service and clear the old build cache:
 ```bash
-become accessibility-checker
-
-# Start build from repository
-toolforge build start https://github.com/ftosoni/mediawiki-accessibility-checker
-
-# Start webservice
-toolforge webservice buildservice start --mount=all
+# Stop and clean existing build
+toolforge webservice buildservice stop --mount=all
+toolforge build clean -y
 ```
 
-### 2. Static Assets
-Ensure the `static/images/` directory contains the required branding assets (like `IMWD_UG_logo.jpg`) for the PDF export service.
+### 2. Build the Application
+Start a new build directly from the GitHub repository:
+```bash
+# Start build from repository
+toolforge build start https://github.com/ftosoni/mediawiki-accessibility-checker
+```
 
----
+### 3. Launch Webservice
+Once the build is complete, launch the service with elevated memory (6GiB recommended for Playwright):
+```bash
+# Start webservice with 6GiB RAM
+toolforge webservice buildservice start --mount=all -m 6Gi
+```
 
 ## 🛠️ Technology Stack
 
