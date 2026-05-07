@@ -4,7 +4,7 @@
 export HOME=/data/project/accessibility-checker
 export PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright
 export PATH=$HOME/.local/bin:$PATH
-export PROJECT_DIR=$HOME/mediawiki-accessibility-checker
+export PROJECT_DIR=$(pwd)
 
 # Create a local directory for missing system libraries
 mkdir -p $HOME/lib/apt/lists
