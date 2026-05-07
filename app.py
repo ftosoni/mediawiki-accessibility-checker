@@ -10,42 +10,42 @@ os.chdir("/data/project/accessibility-checker/www/python/src")
 HOME = "/data/project/accessibility-checker"
 os.environ["HOME"] = HOME
 os.environ["PLAYWRIGHT_BROWSERS_PATH"] = f"{HOME}/.cache/ms-playwright"
-os.environ["PATH"] = f"{HOME}/.local/bin:/usr/local/bin:/usr/bin:/bin:{os.environ.get('PATH', '')}"
+os.environ["PYTHONPATH"] = f"{os.getcwd()}:{os.environ.get('PYTHONPATH', '')}"
 
 def setup():
-    # 2. Ensure dependencies and browsers are present
+    print("--- Checking Dependencies ---")
+    sys.stdout.flush()
     try:
-        # Install requirements if not already there
+        # Install/Update requirements in user space
+        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip", "--user"], check=False)
         subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt", "--user"], check=False)
         
         # Install browsers
         browser_path = os.path.join(os.environ["PLAYWRIGHT_BROWSERS_PATH"], "chromium")
         if not os.path.exists(browser_path):
-            print("--- Installing Playwright Browsers ---")
+            print("--- Installing Playwright Chromium ---")
+            sys.stdout.flush()
             subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=False)
     except Exception as e:
         print(f"Setup error: {e}")
+        sys.stdout.flush()
 
 # 3. The Hijacker
-# We run this immediately on import
 if os.environ.get('HIJACKED') != 'true':
     os.environ['HIJACKED'] = 'true'
     setup()
     
     port = os.environ.get("PORT", "8000")
-    print(f"--- Hijacking uWSGI -> Gunicorn on {port} ---")
+    print(f"--- Launching Gunicorn on port {port} ---")
     sys.stdout.flush()
-    time.sleep(1) # Give logs a moment to catch up
     
-    # Use full path to gunicorn if possible
-    gunicorn_bin = os.path.expanduser("~/.local/bin/gunicorn")
-    if not os.path.exists(gunicorn_bin):
-        gunicorn_bin = "gunicorn"
-
+    # Re-exec using the Python module to avoid PATH issues
+    # We use 'python3 -m gunicorn'
     os.execvp(
-        gunicorn_bin, 
+        sys.executable, 
         [
-            "gunicorn", 
+            sys.executable,
+            "-m", "gunicorn", 
             "backend.main:app", 
             "-k", "uvicorn.workers.UvicornWorker", 
             "--workers", "1", 
@@ -54,7 +54,7 @@ if os.environ.get('HIJACKED') != 'true':
         ]
     )
 
-# 4. Dummy app for uWSGI (if execvp fails)
+# 4. Fallback App
 def app(environ, start_response):
     start_response('500 Internal Server Error', [('Content-Type', 'text/plain')])
-    return [b"Hijack failed. Check uwsgi.log for errors."]
+    return [b"Hijack failed. Check uwsgi.log for details."]
