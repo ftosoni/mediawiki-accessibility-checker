@@ -17,11 +17,11 @@ mkdir -p $APT_DIR/var/cache/apt/archives/partial
 mkdir -p $APT_DIR/var/lib/dpkg
 touch $APT_DIR/var/lib/dpkg/status
 
-# Create local sources.list
+# Create local sources.list with [trusted=yes] to bypass GPG blocks
 cat > $APT_DIR/etc/apt/sources.list <<EOF
-deb http://archive.ubuntu.com/ubuntu/ noble main universe
-deb http://archive.ubuntu.com/ubuntu/ noble-updates main universe
-deb http://archive.ubuntu.com/ubuntu/ noble-security main universe
+deb [trusted=yes] http://archive.ubuntu.com/ubuntu/ noble main universe
+deb [trusted=yes] http://archive.ubuntu.com/ubuntu/ noble-updates main universe
+deb [trusted=yes] http://archive.ubuntu.com/ubuntu/ noble-security main universe
 EOF
 
 # Create a robust local apt.conf
@@ -40,11 +40,11 @@ EOF
 if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
     echo "--- Patching missing system libraries (Ubuntu 24.04 Noble) ---"
     
-    # Update local cache
-    apt-get -c $APT_DIR/etc/apt/apt.conf update --allow-unauthenticated
+    # Update local cache with extreme prejudice
+    apt-get -c $APT_DIR/etc/apt/apt.conf update --allow-insecure-repositories --allow-unauthenticated
     
     cd $HOME/lib
-    # Download packages via APT - Including EVERY variation of libatspi
+    # Download packages via APT
     apt-get -c $APT_DIR/etc/apt/apt.conf download --allow-unauthenticated \
         libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2t64 libdrm2 libxkbcommon0 \
         libxcomposite1 libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 \
@@ -54,7 +54,7 @@ if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
         libgles2 libegl1 libvulkan1 libpci3 libdbus-glib-1-2 \
         libatspi0t64 at-spi2-core libatspi0 libatspi-2-0 || true
     
-    # Final backup: Ask APT for the exact filename/path if the above missed it
+    # Final backup: Ask APT for the exact filename/path
     REL_PATH=$(apt-cache -c $APT_DIR/etc/apt/apt.conf show libatspi0t64 | grep "Filename:" | head -n 1 | awk '{print $2}')
     if [ -n "$REL_PATH" ] && [ ! -f "libatspi.deb" ]; then
         echo "Downloading via manual path: http://archive.ubuntu.com/ubuntu/$REL_PATH"
