@@ -4,7 +4,6 @@ import sys
 import time
 
 # 1. Setup Environment
-# Ensure we are in the right directory
 os.chdir("/data/project/accessibility-checker/www/python/src")
 
 HOME = "/data/project/accessibility-checker"
@@ -12,23 +11,25 @@ os.environ["HOME"] = HOME
 os.environ["PLAYWRIGHT_BROWSERS_PATH"] = f"{HOME}/.cache/ms-playwright"
 os.environ["PYTHONPATH"] = f"{os.getcwd()}:{os.environ.get('PYTHONPATH', '')}"
 
+# In Toolforge webservices, sys.executable is often uwsgi. 
+# We need the real python3 binary.
+PYTHON_BIN = "/usr/bin/python3"
+if not os.path.exists(PYTHON_BIN):
+    PYTHON_BIN = "python3" # Fallback to path
+
 def setup():
-    print("--- Checking Dependencies ---")
-    sys.stdout.flush()
+    print("--- Checking Dependencies ---", flush=True)
     try:
         # Install/Update requirements in user space
-        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip", "--user"], check=False)
-        subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt", "--user"], check=False)
+        subprocess.run([PYTHON_BIN, "-m", "pip", "install", "-r", "requirements.txt", "--user"], check=False)
         
         # Install browsers
         browser_path = os.path.join(os.environ["PLAYWRIGHT_BROWSERS_PATH"], "chromium")
         if not os.path.exists(browser_path):
-            print("--- Installing Playwright Chromium ---")
-            sys.stdout.flush()
-            subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=False)
+            print("--- Installing Playwright Chromium ---", flush=True)
+            subprocess.run([PYTHON_BIN, "-m", "playwright", "install", "chromium"], check=False)
     except Exception as e:
-        print(f"Setup error: {e}")
-        sys.stdout.flush()
+        print(f"Setup error: {e}", flush=True)
 
 # 3. The Hijacker
 if os.environ.get('HIJACKED') != 'true':
@@ -36,15 +37,14 @@ if os.environ.get('HIJACKED') != 'true':
     setup()
     
     port = os.environ.get("PORT", "8000")
-    print(f"--- Launching Gunicorn on port {port} ---")
-    sys.stdout.flush()
+    print(f"--- Launching Gunicorn on port {port} ---", flush=True)
+    time.sleep(1)
     
-    # Re-exec using the Python module to avoid PATH issues
-    # We use 'python3 -m gunicorn'
+    # Re-exec using the REAL python3 binary
     os.execvp(
-        sys.executable, 
+        PYTHON_BIN, 
         [
-            sys.executable,
+            PYTHON_BIN,
             "-m", "gunicorn", 
             "backend.main:app", 
             "-k", "uvicorn.workers.UvicornWorker", 
