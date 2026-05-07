@@ -17,7 +17,7 @@ mkdir -p $APT_DIR/var/cache/apt/archives/partial
 mkdir -p $APT_DIR/var/lib/dpkg
 touch $APT_DIR/var/lib/dpkg/status
 
-# Create local sources.list with updates and security
+# Create local sources.list
 cat > $APT_DIR/etc/apt/sources.list <<EOF
 deb http://archive.ubuntu.com/ubuntu/ noble main universe
 deb http://archive.ubuntu.com/ubuntu/ noble-updates main universe
@@ -44,19 +44,37 @@ if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
     apt-get -c $APT_DIR/etc/apt/apt.conf update --allow-insecure-repositories
     
     cd $HOME/lib
-    # MASSIVE BATCH: Try to catch all moles at once
+    # Download packages via APT
     apt-get -c $APT_DIR/etc/apt/apt.conf download --allow-unauthenticated \
         libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2t64 libdrm2 libxkbcommon0 \
         libxcomposite1 libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 \
         libasound2t64 libxfixes3 libxext6 libxrender1 libx11-6 libx11-xcb1 libxcb1 \
         libdbus-1-3 libnspr4 libnss3 libfontconfig1 libfreetype6 libglib2.0-0t64 \
         libxshmfence1 libxxf86vm1 libsecret-1-0 libwayland-client0 libwayland-server0 \
-        libgles2 libegl1 libvulkan1 libpci3
+        libgles2 libegl1 libvulkan1 libpci3 libdbus-glib-1-2
     
-    # Direct download fallback for libatspi (fixed URL)
-    echo "Attempting direct download of libatspi..."
-    wget -q -O libatspi.deb http://mirrors.kernel.org/ubuntu/pool/main/a/at-spi2-core/libatspi0t64_2.52.0-1_amd64.deb || \
-    wget -q -O libatspi.deb http://archive.ubuntu.com/ubuntu/pool/main/a/at-spi2-core/libatspi0t64_2.52.0-1_amd64.deb
+    # ROBUST PYTHON DOWNLOADER: Find the latest libatspi version automatically
+    echo "Using Python to find and download libatspi..."
+    python3 - <<EOF
+import urllib.request
+import re
+
+package = "libatspi0t64"
+base_url = "http://archive.ubuntu.com/ubuntu/pool/main/a/at-spi2-core/"
+try:
+    response = urllib.request.urlopen(base_url).read().decode('utf-8')
+    # Find the latest amd64 .deb link
+    links = re.findall(r'href="(libatspi0t64_[^"]+?_amd64\.deb)"', response)
+    if links:
+        latest = sorted(links)[-1]
+        print(f"Found latest: {latest}")
+        urllib.request.urlretrieve(base_url + latest, "libatspi_latest.deb")
+        print("Download successful.")
+    else:
+        print("No matches found for libatspi0t64")
+except Exception as e:
+    print(f"Python downloader failed: {e}")
+EOF
 
     echo "Extracting .deb packages..."
     for deb in *.deb; do 
@@ -80,7 +98,7 @@ echo "--- Mole Hunter Diagnostics ---"
 BROWSER_BIN=$(find $PLAYWRIGHT_BROWSERS_PATH -name "chrome-headless-shell" | head -n 1)
 if [ -n "$BROWSER_BIN" ]; then
     echo "Checking dependencies for: $BROWSER_BIN"
-    ldd "$BROWSER_BIN" | grep "not found"
+    ldd "$BROWSER_BIN" | grep "not found" || echo "All dependencies found!"
 fi
 
 # 4. Check/Install Playwright browsers
