@@ -32,3 +32,6 @@ report.txt
 
 # Static
 static/projects.json_tmp
+
+# Temporary files
+tmp/
