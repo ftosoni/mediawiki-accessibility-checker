@@ -17,8 +17,12 @@ mkdir -p $APT_DIR/var/cache/apt/archives/partial
 mkdir -p $APT_DIR/var/lib/dpkg
 touch $APT_DIR/var/lib/dpkg/status
 
-# Create local sources.list
-echo "deb http://archive.ubuntu.com/ubuntu/ noble main universe" > $APT_DIR/etc/apt/sources.list
+# Create local sources.list with updates and security
+cat > $APT_DIR/etc/apt/sources.list <<EOF
+deb http://archive.ubuntu.com/ubuntu/ noble main universe
+deb http://archive.ubuntu.com/ubuntu/ noble-updates main universe
+deb http://archive.ubuntu.com/ubuntu/ noble-security main universe
+EOF
 
 # Create a robust local apt.conf
 cat > $APT_DIR/etc/apt/apt.conf <<EOF
@@ -33,7 +37,6 @@ APT::Get::AllowUnauthenticated "true";
 EOF
 
 # 2. Patch missing Noble libraries
-# Check for libatspi.so.0 specifically in the extraction path
 if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
     echo "--- Patching missing system libraries (Ubuntu 24.04 Noble) ---"
     
@@ -47,15 +50,25 @@ if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
         libxcomposite1 libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 \
         libasound2t64 libxfixes3 libxext6 libxrender1 libx11-6 libx11-xcb1 libxcb1 \
         libdbus-1-3 libnspr4 libnss3 libfontconfig1 libfreetype6 libglib2.0-0t64 \
-        libxshmfence1 libxxf86vm1
+        libxshmfence1 libxxf86vm1 libatspi0t64
     
-    # Direct download for libatspi (using a reliable mirror)
-    echo "Attempting direct download of libatspi..."
-    wget -q -O libatspi.deb http://mirrors.kernel.org/ubuntu/pool/main/a/at-spi2-core/libatspi0t64_2.52.0-1build1_amd64.deb
+    # Direct download fallback for libatspi if APT still fails
+    if [ ! -f "libatspi0t64"*".deb" ]; then
+        echo "Attempting direct download of libatspi..."
+        # Try both main and updates paths
+        wget -q -O libatspi.deb http://archive.ubuntu.com/ubuntu/pool/main/a/at-spi2-core/libatspi0t64_2.52.0-1build1_amd64.deb || \
+        wget -q -O libatspi.deb http://mirrors.kernel.org/ubuntu/pool/main/a/at-spi2-core/libatspi0t64_2.52.0-1build1_amd64.deb
+    fi
 
     echo "Extracting .deb packages..."
     for deb in *.deb; do 
         [ -f "$deb" ] || continue
+        # Check if file is valid (at least 1KB)
+        if [ $(stat -c%s "$deb") -lt 1000 ]; then
+            echo "Skipping invalid/corrupt package: $deb"
+            rm -f "$deb"
+            continue
+        fi
         echo "Processing $deb..."
         dpkg -x "$deb" . 
     done
