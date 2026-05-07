@@ -51,7 +51,7 @@ if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
         libasound2t64 libxfixes3 libxext6 libxrender1 libx11-6 libx11-xcb1 libxcb1 \
         libdbus-1-3 libnspr4 libnss3 libfontconfig1 libfreetype6 libglib2.0-0t64 \
         libxshmfence1 libxxf86vm1 libsecret-1-0 libwayland-client0 libwayland-server0 \
-        libgles2 libegl1 libvulkan1 libpci3 libdbus-glib-1-2 libatspi2.0-0t64 || true
+        libgles2 libegl1 libvulkan1 libpci3 libdbus-glib-1-2 libatspi2.0-0t64 libxi6 || true
     
     # DIRECT CRAWLER FOR LIBATSPI: Search the pool directory directly
     echo "Crawling Ubuntu pool for libatspi..."
