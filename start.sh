@@ -51,7 +51,7 @@ if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
         libasound2t64 libxfixes3 libxext6 libxrender1 libx11-6 libx11-xcb1 libxcb1 \
         libdbus-1-3 libnspr4 libnss3 libfontconfig1 libfreetype6 libglib2.0-0t64 \
         libxshmfence1 libxxf86vm1 libsecret-1-0 libwayland-client0 libwayland-server0 \
-        libgles2 libegl1 libvulkan1 libpci3 libdbus-glib-1-2
+        libgles2 libegl1 libvulkan1 libpci3 libdbus-glib-1-2 libatspi2.0-0t64 || true
     
     # DIRECT CRAWLER FOR LIBATSPI: Search the pool directory directly
     echo "Crawling Ubuntu pool for libatspi..."
@@ -68,12 +68,15 @@ found = False
 for base_url in pools:
     try:
         print(f"Checking {base_url}...")
-        response = urllib.request.urlopen(base_url).read().decode('utf-8')
-        links = re.findall(r'href="(libatspi0[^"]+?_amd64\.deb)"', response)
+        req = urllib.request.Request(base_url, headers={'User-Agent': 'Mozilla/5.0'})
+        response = urllib.request.urlopen(req).read().decode('utf-8')
+        links = re.findall(r'href="(libatspi[^"]+?_amd64\.deb)"', response)
         if links:
             latest = sorted(links)[-1]
             print(f"Found match: {latest}")
-            urllib.request.urlretrieve(base_url + latest, "libatspi_crawled.deb")
+            req = urllib.request.Request(base_url + latest, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req) as resp, open("libatspi_crawled.deb", 'wb') as out:
+                out.write(resp.read())
             print("Download successful.")
             found = True
             break
