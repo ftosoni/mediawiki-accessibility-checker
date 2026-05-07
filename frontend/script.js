@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const selectedGuideline = document.querySelector('input[name="guideline"]:checked').value;
         data.standard = selectedGuideline;
 
-        loadingArea.style.display = 'block';
+        loadingArea.style.display = 'flex';
         resultsArea.style.display = 'none';
         
         try {
@@ -107,7 +107,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             const results = await response.json();
-            displayResults(results);
+            // Pass the base URL if it's a URL audit, so we can resolve relative images
+            displayResults(results, data.url || null);
         } catch (error) {
             alert(`Error: ${error.message}`);
         } finally {
@@ -124,7 +125,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const title = document.getElementById('mw_title').value;
                 if (!projectUrl || !title) return alert('Please select a project and enter a title');
                 
-                // Construct URL: strip trailing /wiki/ and append it back with title
                 const baseUrl = projectUrl.endsWith('/wiki/') ? projectUrl : projectUrl + '/wiki/';
                 const url = baseUrl + encodeURIComponent(title.replace(/ /g, '_'));
                 runAudit({ url });
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    function displayResults(results) {
+    function displayResults(results, baseUrl) {
         resultsArea.style.display = 'block';
         
         // Update counts
@@ -149,15 +149,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('count-passes').textContent = results.summary.passes;
 
         // Render lists
-        renderList('violations-list', results.violations, 'violation');
-        renderList('incomplete-list', results.incomplete, 'incomplete');
-        renderList('passes-list', results.passes, 'pass');
+        renderList('violations-list', results.violations, 'violation', baseUrl);
+        renderList('incomplete-list', results.incomplete, 'incomplete', baseUrl);
+        renderList('passes-list', results.passes, 'pass', baseUrl);
         
         // Scroll to results
         resultsArea.scrollIntoView({ behavior: 'smooth' });
     }
 
-    function renderList(containerId, items, type) {
+    function renderList(containerId, items, type, baseUrl) {
         const container = document.getElementById(containerId);
         container.innerHTML = '';
 
@@ -183,13 +183,34 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <span class="cdx-button cdx-button--weight-quiet" style="font-size: 0.8em; color: #777;">${escapeHtml(item.id)}</span>
                 </div>
                 <div class="nodes-container">
-                    ${item.nodes.map(node => `
+                    ${item.nodes.map(node => {
+                        const isImage = node.html.trim().toLowerCase().startsWith('<img');
+                        let imgPreview = '';
+                        if (isImage) {
+                            const srcMatch = node.html.match(/src=["'](.*?)["']/);
+                            if (srcMatch && srcMatch[1]) {
+                                let src = srcMatch[1];
+                                // Resolve relative URL
+                                if (baseUrl) {
+                                    try {
+                                        src = new URL(src, baseUrl).href;
+                                    } catch (e) {
+                                        if (src.startsWith('//')) src = 'https:' + src;
+                                    }
+                                } else if (src.startsWith('//')) {
+                                    src = 'https:' + src;
+                                }
+                                imgPreview = `<div class="node-preview"><img src="${src}" alt="Preview" style="max-width: 120px; max-height: 120px; border: 1px solid #eaecf0; border-radius: 2px; margin-bottom: 8px; display: block; background: #fff;" /></div>`;
+                            }
+                        }
+                        return `
                         <div class="node-item">
                             <code class="node-selector">${escapeHtml(Array.isArray(node.target) ? node.target.join(' > ') : node.target)}</code>
+                            ${imgPreview}
                             <pre class="node-html"><code>${escapeHtml(node.html)}</code></pre>
                             ${node.failureSummary ? `<div class="failure-summary"><strong>Fix:</strong> ${escapeHtml(node.failureSummary)}</div>` : ''}
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             `;
             container.appendChild(card);
@@ -197,6 +218,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function escapeHtml(text) {
+        if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
