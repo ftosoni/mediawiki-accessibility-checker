@@ -1,0 +1,73 @@
+{{draft}}<languages/>{{ptag|tool-accessibility-checker}}
+{{Tool|templatemode =
+|name              = MediaWiki Accessibility Checker
+|status            = active
+|type1             = web
+|username          = Super nabla
+|author            = Francesco Tosoni
+|description       = A modern, high-performance accessibility auditing tool designed for the MediaWiki ecosystem, providing deep WCAG 2.2 AA validation.
+|image             = 
+|imagesize         = 
+|version           = 
+|update            = 
+|version preview  = 
+|update preview   = 
+|license          = {{EL|MPL-2.0}}
+|download          = [[github:ftosoni/mediawiki-accessibility-checker|GitHub repo]]
+|readme           = [[github:ftosoni/mediawiki-accessibility-checker/blob/main/README.md|README.md]]
+|changelog        = 
+|example          = [[toolforge:accessibility-checker]]
+|parameters       = 
+|tags             = accessibility, playwright, python, fastapi, codex
+|compatibility    = 
+|bugzilla         = 
+|phabricator      = 
+}}
+
+'''MediaWiki Accessibility Checker''' (<code>accessibility-checker</code>) is a modern, high-performance web utility that evaluates the accessibility of HTML pages, with a special focus on Wikipedia, Wikimedia Commons, and other MediaWiki-based projects. It helps ensure that digital content remains navigable and accessible for all individuals, particularly those utilising assistive technologies.
+
+Powered by '''axe-core''' and '''Playwright''', the tool performs deep DOM validation against international standards (like WCAG 2.2 AA). The user interface is built using the '''Wikimedia Codex''' design system to provide a seamless and familiar experience within the Wikimedia environment.
+
+Try it out: [[toolforge:accessibility-checker]]
+
+== Features ==
+
+The tool provides a comprehensive and professional suite for accessibility auditing:
+* '''Deep Validation''': Performs WCAG 2.2 AA compliance checks using the industry-standard axe-core engine.
+* '''Intelligent DOM Enrichment''': Automatically retrieves full HTML snippets and image previews for the elements that trigger accessibility violations, making debugging significantly easier.
+* '''Multi-Format Exports''': Generates professional reports in various formats, including '''PDF''', '''JSON''', '''CSV''', and '''Wikitext''' (ready to be pasted directly onto Wiki talk pages).
+* '''RESTful API''': Provides a fully documented OpenAPI/Swagger interface for programmatic access and CI/CD integrations.
+* '''Codex UI''': A beautiful, responsive interface that follows Wikimedia's modern design guidelines.
+
+== System Architecture ==
+
+The tool has been completely modernised and rebuilt from the ground up, moving away from legacy PHP frameworks to a highly concurrent Python stack.
+
+=== Core Components ===
+
+* '''Backend Layer''': Developed in '''Python 3.11+''' using the '''FastAPI''' framework. This handles the asynchronous REST API, request validation, and routing.
+* '''Evaluation Engine''': Utilises '''Playwright''' to spin up a headless Chromium browser instance. It navigates to the target URL and injects the '''axe-core''' JavaScript library to perform native DOM analysis, capable of piercing shadow DOMs and evaluating complex interactive components.
+* '''Export Pipeline''': A dedicated service layer that transforms the raw axe-core JSON results into various formats, leveraging Playwright's native Print-to-PDF capabilities and custom Wikitext generators.
+* '''Frontend Layer''': A lightweight HTML/JS/CSS frontend styled completely with '''Wikimedia Codex''' tokens and components, communicating asynchronously with the FastAPI backend.
+
+== Deployment ==
+
+The tool is optimised for deployment on Wikimedia Toolforge, running within a containerised environment.
+
+* '''Build Service''': It utilises the modern Toolforge buildpack system, defined by a <code>Procfile</code>.
+* '''Gunicorn/Uvicorn''': The application is served using Gunicorn with Uvicorn async workers to handle multiple concurrent browser sessions efficiently without timeouts.
+
+== Source Code ==
+
+The source code for the MediaWiki Accessibility Checker is open-source and hosted on GitHub.
+
+* '''Repository''': [[github:ftosoni/mediawiki-accessibility-checker|GitHub]]
+* '''License''': Mozilla Public License 2.0 (MPL-2.0)
+* '''Contribution''': Development is open to the community. Please see the repository for contribution guidelines.
+
+== See also ==
+
+* [[Special:MyLanguage/Accessibility guide for developers|Accessibility guide for developers]], local guidelines to improve web accessibility in software production.
+* [[m:Special:MyLanguage/Accessibility|Accessibility]], the central hub for accessibility efforts on Wikimedia projects.
+
+[[Category:Tools{{#translation:}}]]
