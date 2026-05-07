@@ -41,36 +41,30 @@ if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
     echo "--- Patching missing system libraries (Ubuntu 24.04 Noble) ---"
     
     # Update local cache
-    apt-get -c $APT_DIR/etc/apt/apt.conf update --allow-insecure-repositories
+    apt-get -c $APT_DIR/etc/apt/apt.conf update --allow-unauthenticated
     
     cd $HOME/lib
-    # Download packages via APT
+    # Download packages via APT - Including EVERY variation of libatspi
     apt-get -c $APT_DIR/etc/apt/apt.conf download --allow-unauthenticated \
         libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2t64 libdrm2 libxkbcommon0 \
         libxcomposite1 libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 \
         libasound2t64 libxfixes3 libxext6 libxrender1 libx11-6 libx11-xcb1 libxcb1 \
         libdbus-1-3 libnspr4 libnss3 libfontconfig1 libfreetype6 libglib2.0-0t64 \
         libxshmfence1 libxxf86vm1 libsecret-1-0 libwayland-client0 libwayland-server0 \
-        libgles2 libegl1 libvulkan1 libpci3 libdbus-glib-1-2
+        libgles2 libegl1 libvulkan1 libpci3 libdbus-glib-1-2 \
+        libatspi0t64 at-spi2-core libatspi0 libatspi-2-0 || true
     
-    # ULTIMATE DOWNLOADER: Ask APT for the exact filename/path
-    echo "Asking APT for the exact libatspi path..."
+    # Final backup: Ask APT for the exact filename/path if the above missed it
     REL_PATH=$(apt-cache -c $APT_DIR/etc/apt/apt.conf show libatspi0t64 | grep "Filename:" | head -n 1 | awk '{print $2}')
-    if [ -n "$REL_PATH" ]; then
-        echo "Downloading from: http://archive.ubuntu.com/ubuntu/$REL_PATH"
-        wget -q -O libatspi.deb "http://archive.ubuntu.com/ubuntu/$REL_PATH"
-    else
-        echo "APT couldn't find the filename for libatspi0t64. Trying fallback search..."
-        # Fallback to a broader search if exact name failed
-        REL_PATH=$(apt-cache -c $APT_DIR/etc/apt/apt.conf show libatspi0 | grep "Filename:" | head -n 1 | awk '{print $2}')
-        [ -n "$REL_PATH" ] && wget -q -O libatspi.deb "http://archive.ubuntu.com/ubuntu/$REL_PATH"
+    if [ -n "$REL_PATH" ] && [ ! -f "libatspi.deb" ]; then
+        echo "Downloading via manual path: http://archive.ubuntu.com/ubuntu/$REL_PATH"
+        wget -q -O libatspi_manual.deb "http://archive.ubuntu.com/ubuntu/$REL_PATH"
     fi
 
     echo "Extracting .deb packages..."
     for deb in *.deb; do 
         [ -f "$deb" ] || continue
         if [ $(stat -c%s "$deb") -lt 2000 ]; then
-            echo "Skipping invalid/corrupt package: $deb"
             rm -f "$deb"
             continue
         fi
