@@ -1,6 +1,7 @@
 # MediaWiki Accessibility Checker
 
 [![SWH](https://archive.softwareheritage.org/badge/origin/https://github.com/ftosoni/mediawiki-accessibility-checker/)](https://archive.softwareheritage.org/browse/origin/?origin_url=https://github.com/ftosoni/mediawiki-accessibility-checker)
+[![SWH](https://archive.softwareheritage.org/badge/swh:1:dir:1817ae187de6b2357dd3ecbec083d88a44ae0a0c/)](https://archive.softwareheritage.org/swh:1:dir:1817ae187de6b2357dd3ecbec083d88a44ae0a0c;origin=https://github.com/ftosoni/mediawiki-accessibility-checker;visit=swh:1:snp:3cda863fcfd47a23ce72ef7d841f2ae19f2f11a6;anchor=swh:1:rev:5f0a004e1ffc766e33dfc54f05f09c5021329a29)
 [![Python](https://img.shields.io/badge/python-3.11-blue.svg?style=flat-square)](https://www.python.org/)
 [![CI](https://github.com/ftosoni/mediawiki-accessibility-checker/actions/workflows/python-ci.yml/badge.svg?branch=main&style=flat-square)](https://github.com/ftosoni/mediawiki-accessibility-checker/actions/workflows/python-ci.yml)
 [![Code Style: Wikimedia](https://img.shields.io/badge/code%20style-wikimedia-blueviolet.svg?style=flat-square)](https://www.mediawiki.org/wiki/Manual:Coding_conventions/JavaScript)
