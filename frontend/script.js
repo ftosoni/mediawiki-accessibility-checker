@@ -184,30 +184,54 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 <div class="nodes-container">
                     ${item.nodes.map(node => {
-                        const isImage = node.html.trim().toLowerCase().startsWith('<img');
                         let imgPreview = '';
-                        if (isImage) {
-                            const srcMatch = node.html.match(/src=["'](.*?)["']/);
-                            if (srcMatch && srcMatch[1]) {
-                                let src = srcMatch[1];
-                                // Resolve relative URL
+                        // Find any img tag
+                        const imgTagMatch = node.html.match(/<img[^>]+>/i);
+                        
+                        if (imgTagMatch) {
+                            const imgTag = imgTagMatch[0];
+                            // Try src, then data-src (lazy load), then srcset
+                            let src = (imgTag.match(/src=["'](.*?)["']/i) || 
+                                       imgTag.match(/data-src=["'](.*?)["']/i) || 
+                                       imgTag.match(/srcset=["'](.*?)["']/i) || [])[1];
+                            
+                            if (src) {
+                                // Extract first URL if it's a srcset
+                                src = src.split(',')[0].split(' ')[0].trim();
+                                
+                                // Resolve URL
+                                let resolvedSrc = src;
                                 if (baseUrl) {
                                     try {
-                                        src = new URL(src, baseUrl).href;
+                                        resolvedSrc = new URL(src, baseUrl).href;
                                     } catch (e) {
-                                        if (src.startsWith('//')) src = 'https:' + src;
+                                        if (src.startsWith('//')) resolvedSrc = 'https:' + src;
                                     }
                                 } else if (src.startsWith('//')) {
-                                    src = 'https:' + src;
+                                    resolvedSrc = 'https:' + src;
                                 }
-                                imgPreview = `<div class="node-preview"><img src="${src}" alt="Preview" style="max-width: 120px; max-height: 120px; border: 1px solid #eaecf0; border-radius: 2px; margin-bottom: 8px; display: block; background: #fff;" /></div>`;
+                                
+                                console.log(`[Preview] Resolved ${src} to ${resolvedSrc}`);
+                                
+                                imgPreview = `
+                                    <div class="node-preview">
+                                        <img src="${resolvedSrc}" 
+                                             alt="Preview" 
+                                             loading="lazy"
+                                             referrerpolicy="no-referrer"
+                                             style="max-width: 140px; max-height: 140px; border: 1px solid #eaecf0; border-radius: 2px; margin-bottom: 8px; display: block; background: #fff;" 
+                                             onerror="this.parentElement.style.display='none';" />
+                                    </div>`;
                             }
                         }
+                        // Truncate HTML for display
+                        const displayHtml = node.html.length > 200 ? node.html.substring(0, 200) + '...' : node.html;
+
                         return `
                         <div class="node-item">
                             <code class="node-selector">${escapeHtml(Array.isArray(node.target) ? node.target.join(' > ') : node.target)}</code>
                             ${imgPreview}
-                            <pre class="node-html"><code>${escapeHtml(node.html)}</code></pre>
+                            <pre class="node-html"><code>${escapeHtml(displayHtml)}</code></pre>
                             ${node.failureSummary ? `<div class="failure-summary"><strong>Fix:</strong> ${escapeHtml(node.failureSummary)}</div>` : ''}
                         </div>
                     `}).join('')}
