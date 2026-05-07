@@ -68,13 +68,13 @@ found = False
 for base_url in pools:
     try:
         print(f"Checking {base_url}...")
-        req = urllib.request.Request(base_url, headers={'User-Agent': 'Mozilla/5.0'})
+        req = urllib.request.Request(base_url, headers={'User-Agent': 'https://accessibility-checker.toolforge.org (contact: https://meta.wikimedia.org/wiki/User_talk:Super_nabla)'})
         response = urllib.request.urlopen(req).read().decode('utf-8')
         links = re.findall(r'href="(libatspi[^"]+?_amd64\.deb)"', response)
         if links:
             latest = sorted(links)[-1]
             print(f"Found match: {latest}")
-            req = urllib.request.Request(base_url + latest, headers={'User-Agent': 'Mozilla/5.0'})
+            req = urllib.request.Request(base_url + latest, headers={'User-Agent': 'https://accessibility-checker.toolforge.org (contact: https://meta.wikimedia.org/wiki/User_talk:Super_nabla)'})
             with urllib.request.urlopen(req) as resp, open("libatspi_crawled.deb", 'wb') as out:
                 out.write(resp.read())
             print("Download successful.")
