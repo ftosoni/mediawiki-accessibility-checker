@@ -120,8 +120,12 @@ class AxeService:
             incomplete = format_items(data.get('incomplete', []))
             inapplicable = format_items(data.get('inapplicable', []))
 
+            # Get page title
+            page_title = await page.title() if url else "Raw HTML Content"
+
             response = AccessibilityResponse(
                 url=url or "Raw HTML",
+                title=page_title,
                 timestamp=datetime.datetime.utcnow().isoformat(),
                 violations=violations,
                 passes=passes,

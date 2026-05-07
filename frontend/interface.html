@@ -854,6 +854,22 @@
                 </div>
             </div>
 
+            <!-- Export Section -->
+            <div class="results-actions" style="margin: 20px 0; display: flex; align-items: center; gap: 12px; justify-content: flex-end; padding-bottom: 20px; border-bottom: 1px solid var(--cdx-color-border-subtle);">
+                <label for="export-format" class="cdx-label__label__text" style="font-weight: bold;">Export Report:</label>
+                <div class="cdx-select-wrapper" style="width: 150px;">
+                    <select id="export-format" class="cdx-select">
+                        <option value="pdf">PDF Report</option>
+                        <option value="wikitext">Wikitext</option>
+                        <option value="csv">CSV</option>
+                        <option value="json">JSON</option>
+                    </select>
+                </div>
+                <button id="btn-export" class="cdx-button cdx-button--action-progressive cdx-button--weight-primary">
+                    Download
+                </button>
+            </div>
+
             <div class="cdx-tabs results-filter" role="tablist" aria-label="Result filter" style="padding: 0;">
                 <button class="cdx-tabs__item cdx-tabs__item--active" data-filter="violations" role="tab"
                     aria-selected="true">Violations</button>

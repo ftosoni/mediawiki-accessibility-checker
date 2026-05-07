@@ -1,6 +1,10 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    // MediaWiki Projects Loading
+    // State
     let mwProjects = [];
+    let lastResults = null;
+    let lastAuditedUrl = null;
+
+    // Load projects
     try {
         const response = await fetch('/static/projects.json');
         mwProjects = await response.json();
@@ -87,7 +91,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const resultsArea = document.getElementById('results-area');
 
     async function runAudit(data) {
-        // Add selected guideline
         const selectedGuideline = document.querySelector('input[name="guideline"]:checked').value;
         data.standard = selectedGuideline;
 
@@ -106,9 +109,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 throw new Error(err.detail || 'Audit failed');
             }
 
-            const results = await response.json();
-            // Pass the base URL if it's a URL audit, so we can resolve relative images
-            displayResults(results, data.url || null);
+            lastResults = await response.json();
+            lastAuditedUrl = data.url || null;
+            displayResults(lastResults, lastAuditedUrl);
         } catch (error) {
             alert(`Error: ${error.message}`);
         } finally {
@@ -140,20 +143,62 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    // Export logic
+    const btnExport = document.getElementById('btn-export');
+    btnExport.addEventListener('click', async () => {
+        if (!lastResults) return;
+        
+        const format = document.getElementById('export-format').value;
+        const originalText = btnExport.textContent;
+        btnExport.disabled = true;
+        btnExport.textContent = 'Generating...';
+
+        try {
+            const response = await fetch('/api/export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ results: lastResults, format })
+            });
+            
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.detail || 'Export failed');
+            }
+            
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            // Filename construction
+            let ext = format;
+            if (format === 'wikitext') ext = 'txt';
+            const timestamp = new Date().toISOString().split('T')[0];
+            a.download = `accessibility_report_${timestamp}.${ext}`;
+            
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            alert(`Export Error: ${error.message}`);
+        } finally {
+            btnExport.disabled = false;
+            btnExport.textContent = originalText;
+        }
+    });
+
     function displayResults(results, baseUrl) {
         resultsArea.style.display = 'block';
         
-        // Update counts
         document.getElementById('count-violations').textContent = results.summary.violations;
         document.getElementById('count-incomplete').textContent = results.summary.incomplete;
         document.getElementById('count-passes').textContent = results.summary.passes;
 
-        // Render lists
         renderList('violations-list', results.violations, 'violation', baseUrl);
         renderList('incomplete-list', results.incomplete, 'incomplete', baseUrl);
         renderList('passes-list', results.passes, 'pass', baseUrl);
         
-        // Scroll to results
         resultsArea.scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -169,7 +214,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         items.forEach(item => {
             const card = document.createElement('div');
             card.className = `issue-card ${type}`;
-            
             const impactClass = item.impact ? `impact-${item.impact}` : '';
             
             card.innerHTML = `
@@ -185,21 +229,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="nodes-container">
                     ${item.nodes.map(node => {
                         let imgPreview = '';
-                        // Find any img tag
                         const imgTagMatch = node.html.match(/<img[^>]+>/i);
                         
                         if (imgTagMatch) {
                             const imgTag = imgTagMatch[0];
-                            // Try src, then data-src (lazy load), then srcset
                             let src = (imgTag.match(/src=["'](.*?)["']/i) || 
                                        imgTag.match(/data-src=["'](.*?)["']/i) || 
                                        imgTag.match(/srcset=["'](.*?)["']/i) || [])[1];
                             
                             if (src) {
-                                // Extract first URL if it's a srcset
                                 src = src.split(',')[0].split(' ')[0].trim();
-                                
-                                // Resolve URL
                                 let resolvedSrc = src;
                                 if (baseUrl) {
                                     try {
@@ -210,8 +249,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 } else if (src.startsWith('//')) {
                                     resolvedSrc = 'https:' + src;
                                 }
-                                
-                                console.log(`[Preview] Resolved ${src} to ${resolvedSrc}`);
                                 
                                 imgPreview = `
                                     <div class="node-preview">
@@ -224,7 +261,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     </div>`;
                             }
                         }
-                        // Truncate HTML for display
+                        
                         const displayHtml = node.html.length > 200 ? node.html.substring(0, 200) + '...' : node.html;
 
                         return `
