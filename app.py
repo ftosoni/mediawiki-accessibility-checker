@@ -9,18 +9,40 @@ os.chdir("/data/project/accessibility-checker/www/python/src")
 HOME = "/data/project/accessibility-checker"
 os.environ["HOME"] = HOME
 os.environ["PLAYWRIGHT_BROWSERS_PATH"] = f"{HOME}/.cache/ms-playwright"
-os.environ["PYTHONPATH"] = f"{os.getcwd()}:{os.environ.get('PYTHONPATH', '')}"
 
-# In Toolforge webservices, sys.executable is often uwsgi. 
-# We need the real python3 binary.
-PYTHON_BIN = "/usr/bin/python3"
-if not os.path.exists(PYTHON_BIN):
-    PYTHON_BIN = "python3" # Fallback to path
+# 2. Find the REAL Python
+# We check common Toolforge/Buildpack locations
+POSSIBLE_PYTHONS = [
+    "/usr/bin/python3",
+    "/usr/bin/python",
+    # Heroku/Buildpack locations
+    "/layers/heroku_python/venv/bin/python",
+    "/workspace/venv/bin/python",
+    # Local user location
+    f"{HOME}/.local/bin/python3",
+    sys.executable # Last resort
+]
+
+PYTHON_BIN = None
+for p in POSSIBLE_PYTHONS:
+    try:
+        # Check if this python has pip
+        result = subprocess.run([p, "-m", "pip", "--version"], capture_output=True, text=True)
+        if result.returncode == 0:
+            PYTHON_BIN = p
+            print(f"--- Found working Python: {p} ---", flush=True)
+            break
+    except:
+        continue
+
+if not PYTHON_BIN:
+    print("--- WARNING: No Python with 'pip' found. Falling back to sys.executable ---", flush=True)
+    PYTHON_BIN = sys.executable
 
 def setup():
     print("--- Checking Dependencies ---", flush=True)
     try:
-        # Install/Update requirements in user space
+        # Try to install/verify requirements
         subprocess.run([PYTHON_BIN, "-m", "pip", "install", "-r", "requirements.txt", "--user"], check=False)
         
         # Install browsers
@@ -37,10 +59,11 @@ if os.environ.get('HIJACKED') != 'true':
     setup()
     
     port = os.environ.get("PORT", "8000")
-    print(f"--- Launching Gunicorn on port {port} ---", flush=True)
+    print(f"--- Launching Gunicorn via {PYTHON_BIN} on port {port} ---", flush=True)
+    sys.stdout.flush()
     time.sleep(1)
     
-    # Re-exec using the REAL python3 binary
+    # Re-exec using the found Python
     os.execvp(
         PYTHON_BIN, 
         [
