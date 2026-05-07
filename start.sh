@@ -53,28 +53,18 @@ if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
         libxshmfence1 libxxf86vm1 libsecret-1-0 libwayland-client0 libwayland-server0 \
         libgles2 libegl1 libvulkan1 libpci3 libdbus-glib-1-2
     
-    # ROBUST PYTHON DOWNLOADER: Find the latest libatspi version automatically
-    echo "Using Python to find and download libatspi..."
-    python3 - <<EOF
-import urllib.request
-import re
-
-package = "libatspi0t64"
-base_url = "http://archive.ubuntu.com/ubuntu/pool/main/a/at-spi2-core/"
-try:
-    response = urllib.request.urlopen(base_url).read().decode('utf-8')
-    # Find the latest amd64 .deb link
-    links = re.findall(r'href="(libatspi0t64_[^"]+?_amd64\.deb)"', response)
-    if links:
-        latest = sorted(links)[-1]
-        print(f"Found latest: {latest}")
-        urllib.request.urlretrieve(base_url + latest, "libatspi_latest.deb")
-        print("Download successful.")
-    else:
-        print("No matches found for libatspi0t64")
-except Exception as e:
-    print(f"Python downloader failed: {e}")
-EOF
+    # ULTIMATE DOWNLOADER: Ask APT for the exact filename/path
+    echo "Asking APT for the exact libatspi path..."
+    REL_PATH=$(apt-cache -c $APT_DIR/etc/apt/apt.conf show libatspi0t64 | grep "Filename:" | head -n 1 | awk '{print $2}')
+    if [ -n "$REL_PATH" ]; then
+        echo "Downloading from: http://archive.ubuntu.com/ubuntu/$REL_PATH"
+        wget -q -O libatspi.deb "http://archive.ubuntu.com/ubuntu/$REL_PATH"
+    else
+        echo "APT couldn't find the filename for libatspi0t64. Trying fallback search..."
+        # Fallback to a broader search if exact name failed
+        REL_PATH=$(apt-cache -c $APT_DIR/etc/apt/apt.conf show libatspi0 | grep "Filename:" | head -n 1 | awk '{print $2}')
+        [ -n "$REL_PATH" ] && wget -q -O libatspi.deb "http://archive.ubuntu.com/ubuntu/$REL_PATH"
+    fi
 
     echo "Extracting .deb packages..."
     for deb in *.deb; do 
