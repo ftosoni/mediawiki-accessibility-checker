@@ -17,7 +17,7 @@ mkdir -p $APT_DIR/var/cache/apt/archives/partial
 mkdir -p $APT_DIR/var/lib/dpkg
 touch $APT_DIR/var/lib/dpkg/status
 
-# Create local sources.list with [trusted=yes] to bypass GPG blocks
+# Create local sources.list with [trusted=yes]
 cat > $APT_DIR/etc/apt/sources.list <<EOF
 deb [trusted=yes] http://archive.ubuntu.com/ubuntu/ noble main universe
 deb [trusted=yes] http://archive.ubuntu.com/ubuntu/ noble-updates main universe
@@ -40,26 +40,49 @@ EOF
 if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
     echo "--- Patching missing system libraries (Ubuntu 24.04 Noble) ---"
     
-    # Update local cache with extreme prejudice
+    # Update local cache
     apt-get -c $APT_DIR/etc/apt/apt.conf update --allow-insecure-repositories --allow-unauthenticated
     
     cd $HOME/lib
-    # Download packages via APT
+    # Download main batch
     apt-get -c $APT_DIR/etc/apt/apt.conf download --allow-unauthenticated \
         libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2t64 libdrm2 libxkbcommon0 \
         libxcomposite1 libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 \
         libasound2t64 libxfixes3 libxext6 libxrender1 libx11-6 libx11-xcb1 libxcb1 \
         libdbus-1-3 libnspr4 libnss3 libfontconfig1 libfreetype6 libglib2.0-0t64 \
         libxshmfence1 libxxf86vm1 libsecret-1-0 libwayland-client0 libwayland-server0 \
-        libgles2 libegl1 libvulkan1 libpci3 libdbus-glib-1-2 \
-        libatspi0t64 at-spi2-core libatspi0 libatspi-2-0 || true
+        libgles2 libegl1 libvulkan1 libpci3 libdbus-glib-1-2
     
-    # Final backup: Ask APT for the exact filename/path
-    REL_PATH=$(apt-cache -c $APT_DIR/etc/apt/apt.conf show libatspi0t64 | grep "Filename:" | head -n 1 | awk '{print $2}')
-    if [ -n "$REL_PATH" ] && [ ! -f "libatspi.deb" ]; then
-        echo "Downloading via manual path: http://archive.ubuntu.com/ubuntu/$REL_PATH"
-        wget -q -O libatspi_manual.deb "http://archive.ubuntu.com/ubuntu/$REL_PATH"
-    fi
+    # DIRECT CRAWLER FOR LIBATSPI: Search the pool directory directly
+    echo "Crawling Ubuntu pool for libatspi..."
+    python3 - <<EOF
+import urllib.request
+import re
+import os
+
+pools = [
+    "http://archive.ubuntu.com/ubuntu/pool/main/a/at-spi2-core/",
+    "http://archive.ubuntu.com/ubuntu/pool/main/a/at-spi2-atk/",
+]
+found = False
+for base_url in pools:
+    try:
+        print(f"Checking {base_url}...")
+        response = urllib.request.urlopen(base_url).read().decode('utf-8')
+        links = re.findall(r'href="(libatspi0[^"]+?_amd64\.deb)"', response)
+        if links:
+            latest = sorted(links)[-1]
+            print(f"Found match: {latest}")
+            urllib.request.urlretrieve(base_url + latest, "libatspi_crawled.deb")
+            print("Download successful.")
+            found = True
+            break
+    except Exception as e:
+        print(f"Crawler failed for {base_url}: {e}")
+
+if not found:
+    print("CRITICAL: Could not find libatspi in any pool!")
+EOF
 
     echo "Extracting .deb packages..."
     for deb in *.deb; do 
