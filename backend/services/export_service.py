@@ -13,7 +13,7 @@ from backend.schemas import AccessibilityResponse
 class ExportService:
     @staticmethod
     def to_json(results: AccessibilityResponse) -> str:
-        return results.json(indent=2)
+        return results.model_dump_json(indent=2)
 
     @staticmethod
     def to_csv(results: AccessibilityResponse) -> str:
