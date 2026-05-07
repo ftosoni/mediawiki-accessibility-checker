@@ -37,7 +37,7 @@ APT::Get::AllowUnauthenticated "true";
 EOF
 
 # 2. Patch missing Noble libraries
-if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
+if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ] || [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libXi.so.6" ]; then
     echo "--- Patching missing system libraries (Ubuntu 24.04 Noble) ---"
     
     # Update local cache
