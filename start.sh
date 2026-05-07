@@ -1,26 +1,31 @@
 #!/bin/bash
-# MediaWiki Accessibility Checker - Toolforge Startup Script
+# MediaWiki Accessibility Checker - Zero-Dependency Bootstrap Script
 
-# 1. Force the home directory and playwright paths
 export HOME=/data/project/accessibility-checker
 export PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright
-export PATH=$HOME/.local/bin:$PATH
+export PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH
 
-echo "--- Starting MediaWiki Accessibility Checker ---"
-echo "Environment: HOME=$HOME"
+echo "--- Toolforge Bootstrap Starting ---"
 
-# 2. Ensure dependencies are installed in the user space
-echo "Checking dependencies..."
-python3 -m pip install --upgrade pip --user > /dev/null
-python3 -m pip install -r requirements.txt --user > /dev/null
+# 1. Bootstrap Pip if missing
+if ! python3 -m pip --version > /dev/null 2>&1; then
+    echo "Pip not found. Bootstrapping..."
+    curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+    python3 get-pip.py --user
+    rm get-pip.py
+fi
 
-# 3. Check and Install Playwright browsers if missing
+# 2. Install/Update Dependencies
+echo "Installing/Updating requirements..."
+python3 -m pip install --upgrade pip --user
+python3 -m pip install -r requirements.txt --user
+
+# 3. Check and Install Playwright browsers
 if [ ! -d "$PLAYWRIGHT_BROWSERS_PATH" ]; then
-    echo "Installing Playwright Chromium (this may take a minute)..."
+    echo "Installing Playwright Chromium (this will take a moment)..."
     python3 -m playwright install chromium
 fi
 
 # 4. Start the application
-echo "Launching Gunicorn..."
-# We use 'python3 -m gunicorn' to ensure we use the one we just installed
-python3 -m gunicorn backend.main:app -k uvicorn.workers.UvicornWorker --workers=1 --timeout 600 --bind 0.0.0.0
+echo "--- Launching Gunicorn ---"
+python3 -m gunicorn backend.main:app -k uvicorn.workers.UvicornWorker --workers=1 --timeout 600 --bind 0.0.0.0:${PORT:-8000}
