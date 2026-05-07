@@ -1,1 +1,1 @@
-web: echo "Checking Playwright browsers..." && python3 -m playwright install chromium && echo "Starting Gunicorn..." && PYTHONUNBUFFERED=1 gunicorn backend.main:app -k uvicorn.workers.UvicornWorker --workers=1 --timeout 600 --bind 0.0.0.0 --access-logfile -
+web: bash start.sh
