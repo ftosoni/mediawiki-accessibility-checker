@@ -33,6 +33,7 @@ APT::Get::AllowUnauthenticated "true";
 EOF
 
 # 2. Patch missing Noble libraries
+# Check for libatspi.so.0 specifically in the extraction path
 if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
     echo "--- Patching missing system libraries (Ubuntu 24.04 Noble) ---"
     
@@ -45,13 +46,12 @@ if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
         libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2t64 libdrm2 libxkbcommon0 \
         libxcomposite1 libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 \
         libasound2t64 libxfixes3 libxext6 libxrender1 libx11-6 libx11-xcb1 libxcb1 \
-        libdbus-1-3 libnspr4 libnss3 libfontconfig1 libfreetype6 libglib2.0-0t64
+        libdbus-1-3 libnspr4 libnss3 libfontconfig1 libfreetype6 libglib2.0-0t64 \
+        libxshmfence1 libxxf86vm1
     
-    # Direct download fallback for libatspi (which seems to be missing from some mirror views)
-    if [ ! -f "libatspi.so.0" ]; then
-        echo "Directly downloading libatspi..."
-        wget -q http://mirrors.kernel.org/ubuntu/pool/main/a/at-spi2-core/libatspi0t64_2.52.0-1build1_amd64.deb
-    fi
+    # Direct download for libatspi (using a reliable mirror)
+    echo "Attempting direct download of libatspi..."
+    wget -q -O libatspi.deb http://mirrors.kernel.org/ubuntu/pool/main/a/at-spi2-core/libatspi0t64_2.52.0-1build1_amd64.deb
 
     echo "Extracting .deb packages..."
     for deb in *.deb; do 
