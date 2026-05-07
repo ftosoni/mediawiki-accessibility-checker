@@ -37,6 +37,14 @@ app.mount("/static", StaticFiles(directory="frontend"), name="static")
 async def read_index():
     return FileResponse("frontend/interface.html")
 
+@app.get("/robots.txt")
+async def robots():
+    return FileResponse("frontend/robots.txt")
+
+@app.get("/sitemap.xml")
+async def sitemap():
+    return FileResponse("frontend/sitemap.xml")
+
 async def _handle_export_response(results: AccessibilityResponse, format: ExportFormat):
     """Helper to handle the export conversion and Response object creation."""
     logo_path = os.path.join(os.getcwd(), "static", "images", "IMWD_UG_logo.jpg")

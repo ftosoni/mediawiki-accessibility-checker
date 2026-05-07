@@ -25,9 +25,19 @@ class AxeService:
                 # Normalize URL: prepend https:// if protocol is missing
                 if not url.startswith(('http://', 'https://')):
                     url = 'https://' + url
-                await page.goto(url, wait_until="networkidle")
+                try:
+                    await page.goto(url, wait_until="networkidle", timeout=60000)
+                except Exception as e:
+                    if "Timeout" not in str(e) and "TimeoutError" not in type(e).__name__:
+                        await browser.close()
+                        raise
             elif html:
-                await page.set_content(html, wait_until="networkidle")
+                try:
+                    await page.set_content(html, wait_until="networkidle", timeout=60000)
+                except Exception as e:
+                    if "Timeout" not in str(e) and "TimeoutError" not in type(e).__name__:
+                        await browser.close()
+                        raise
             else:
                 await browser.close()
                 raise ValueError("Either URL or HTML must be provided")

@@ -94,6 +94,6 @@ toolforge webservice buildservice start --mount=all -m 6Gi
 - **PDF Generation**: Playwright Print-to-PDF
 
 
-## 📄 Licence
+## 📄 License
 [MPL-2.0 License](./LICENSE). Created by [Francesco Tosoni (Super nabla)](https://meta.wikimedia.org/wiki/Special:MyLanguage/User:Super_nabla). 
 Powered by axe-core.
