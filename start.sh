@@ -33,19 +33,20 @@ APT::Get::AllowUnauthenticated "true";
 EOF
 
 # 2. Patch missing Noble libraries
-# We check for libXfixes.so.3 to ensure we pick up the latest additions
-if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libXfixes.so.3" ]; then
+# We check for libatspi.so.0 to ensure we pick up the latest additions
+if [ ! -f "$HOME/lib/usr/lib/x86_64-linux-gnu/libatspi.so.0" ]; then
     echo "--- Patching missing system libraries (Ubuntu 24.04 Noble) ---"
     
     # Update local cache
     apt-get -c $APT_DIR/etc/apt/apt.conf update --allow-insecure-repositories
     
     cd $HOME/lib
-    # Expanded list of Playwright dependencies for Noble
+    # Broad batch of Playwright dependencies for Noble
     apt-get -c $APT_DIR/etc/apt/apt.conf download --allow-unauthenticated \
         libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2t64 libdrm2 libxkbcommon0 \
         libxcomposite1 libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 \
-        libasound2t64 libxfixes3 libxext6 libxrender1 libx11-6 libx11-xcb1 libxcb1 libdbus-1-3
+        libasound2t64 libxfixes3 libxext6 libxrender1 libx11-6 libx11-xcb1 libxcb1 \
+        libdbus-1-3 libatspi0t64 libnspr4 libnss3 libfontconfig1 libfreetype6 libglib2.0-0t64
     
     echo "Extracting .deb packages..."
     for deb in *.deb; do 
