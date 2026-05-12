@@ -13,7 +13,7 @@
     <meta name="author" content="Francesco Tosoni">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-    <link rel="shortcut icon" href="https://accessibility-checker.toolforge.org/favicon.ico" type="image/x-icon" />
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
     <link rel="canonical" href="https://accessibility-checker.toolforge.org/" />
     <link rel="preconnect" href="https://tools-static.wmflabs.org" crossorigin>
     <meta property="og:type" content="website">
@@ -87,14 +87,8 @@
 
     <!-- ── Header ─────────────────────────────────────────── -->
     <header class="app-header" role="banner">
-        <a href="/" class="app-header__brand" aria-label="MediaWiki Accessibility Checker — home">
-            <div class="app-header__brand-icon" aria-hidden="true">
-                <!-- accessibility / eye icon -->
-                <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                        d="M10 3C5.5 3 1.7 5.9 0 10c1.7 4.1 5.5 7 10 7s8.3-2.9 10-7c-1.7-4.1-5.5-7-10-7zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z" />
-                </svg>
-            </div>
+        <a href="/" class="app-header__brand" aria-label="Home | MediaWiki Accessibility Checker">
+            <img src="/static/favicon.svg" alt="" aria-hidden="true" class="app-header__brand-icon" />
             <span class="app-header__title">MediaWiki Accessibility Checker</span>
         </a>
         <nav class="app-header__actions" aria-label="External links">
